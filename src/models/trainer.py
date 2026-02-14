@@ -12,45 +12,40 @@ class Trainer:
         self.report_path = report_path
         self.pipe = Pipeline([("pre", pre), ("model", model)])
 
-    def fit(self, X_train, y_train, X_test, y_test) -> dict:
-        mlflow.set_tracking_uri("file:./mlruns")
-        mlflow.set_experiment("risklens-fraud-guard")
+    def fit(self, X_train, y_train, X_test, y_test, model_name: str = "model") -> dict:
+        os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
+        os.makedirs(os.path.dirname(self.report_path), exist_ok=True)
 
-        model_name = os.path.splitext(os.path.basename(self.model_path))[0]
+        tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
+        mlflow.set_tracking_uri(tracking_uri)
+        mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "RiskLens"))
 
         with mlflow.start_run(run_name=model_name):
-            mlflow.log_param("model_name", model_name)
-
             self.pipe.fit(X_train, y_train)
 
             y_prob = self.pipe.predict_proba(X_test)[:, 1]
             rep = evaluate(y_test, y_prob)
 
-            os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
-            os.makedirs(os.path.dirname(self.report_path), exist_ok=True)
-
             joblib.dump(self.pipe, self.model_path)
             save_report(rep, self.report_path)
 
             save_graphs(
-                y_test,
-                y_prob,
-                rep,
+                y_test, y_prob, rep,
                 out_dir="artifacts/graphs",
-                prefix=model_name,
+                prefix=os.path.splitext(os.path.basename(self.model_path))[0]
             )
 
-            mlflow.log_metric("roc_auc", float(rep["roc_auc"]))
-            mlflow.log_metric("pr_auc", float(rep["pr_auc"]))
-            mlflow.log_metric("threshold", float(rep["threshold"]))
+            mlflow.log_metrics({
+                "roc_auc": rep["roc_auc"],
+                "pr_auc": rep["pr_auc"],
+                "threshold": rep["threshold"],
+            })
 
-            mlflow.log_artifact(self.model_path)
-            mlflow.log_artifact(self.report_path)
+            mlflow.log_artifact(self.model_path, artifact_path="models")
+            mlflow.log_artifact(self.report_path, artifact_path="metrics")
 
-            graphs_dir = "artifacts/graphs"
-            if os.path.isdir(graphs_dir):
-                for fn in os.listdir(graphs_dir):
-                    if fn.startswith(model_name + "_") and fn.endswith(".png"):
-                        mlflow.log_artifact(os.path.join(graphs_dir, fn))
+            for fname in os.listdir("artifacts/graphs"):
+                if fname.startswith(os.path.splitext(os.path.basename(self.model_path))[0]):
+                    mlflow.log_artifact(os.path.join("artifacts/graphs", fname), artifact_path="graphs")
 
-            return rep
+        return rep
