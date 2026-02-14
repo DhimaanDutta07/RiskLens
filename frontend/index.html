@@ -1,0 +1,709 @@
+<!-- =========================
+FILE: frontend/index.html
+(ENTIRE FILE)
+========================= -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RiskLens • Fraud Console</title>
+  <style>
+    :root{
+      --bg:#04050A; --bg2:#060A12;
+      --card: rgba(255,255,255,.04);
+      --stroke: rgba(28,110,255,.28);
+      --stroke2: rgba(28,110,255,.44);
+      --text:#EAF0FF; --muted:#9AA7C7;
+      --blue:#1C6EFF; --cyan:#18B6FF;
+      --good:#2EE59D; --warn:#FFC857; --bad:#FF4D6D;
+      --shadow: 0 18px 70px rgba(0,0,0,.65);
+      --r: 18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1100px 700px at 18% 12%, rgba(28,110,255,.18), transparent 58%),
+        radial-gradient(1000px 650px at 82% 22%, rgba(24,182,255,.13), transparent 58%),
+        radial-gradient(900px 600px at 50% 92%, rgba(28,110,255,.10), transparent 60%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+      overflow-x:hidden;
+    }
+    .wrap{max-width:1180px;margin:0 auto;padding:26px 16px 42px;}
+    .top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px;}
+    .brand{display:flex;gap:12px;align-items:center;}
+    .logo{
+      width:42px;height:42px;border-radius:14px;position:relative;overflow:hidden;
+      background:linear-gradient(135deg, rgba(28,110,255,.95), rgba(24,182,255,.85));
+      box-shadow:0 0 0 1px rgba(28,110,255,.40), 0 18px 55px rgba(28,110,255,.22);
+    }
+    .logo:after{
+      content:"";position:absolute;inset:-40%;
+      background:conic-gradient(from 120deg, transparent 0 35%, rgba(255,255,255,.22) 40%, transparent 55% 100%);
+      animation:spin 4.8s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    h1{margin:0;font-size:18px;letter-spacing:.25px;}
+    .sub{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.35;}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+    .pill{
+      display:flex;align-items:center;gap:8px;
+      padding:10px 12px;border-radius:999px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(28,110,255,.24);
+      box-shadow:0 10px 35px rgba(0,0,0,.35);
+      cursor:pointer;user-select:none;
+      transition:transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .pill:hover{transform:translateY(-1px);border-color:rgba(28,110,255,.40);background:rgba(255,255,255,.055);}
+    .dot{width:9px;height:9px;border-radius:999px;background:var(--warn);box-shadow:0 0 0 3px rgba(255,200,87,.12);}
+    .dot.good{background:var(--good);box-shadow:0 0 0 3px rgba(46,229,157,.12);}
+    .dot.bad{background:var(--bad);box-shadow:0 0 0 3px rgba(255,77,109,.12);}
+
+    .grid{display:grid;grid-template-columns:1.4fr .6fr;gap:14px;}
+    @media (max-width:980px){.grid{grid-template-columns:1fr;}}
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border-radius:var(--r);
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+      border:1px solid rgba(28,110,255,.18);
+    }
+    .card:before{
+      content:"";position:absolute;inset:-2px;
+      background:
+        radial-gradient(700px 200px at 15% 0%, rgba(28,110,255,.20), transparent 58%),
+        radial-gradient(700px 200px at 85% 0%, rgba(24,182,255,.16), transparent 58%);
+      pointer-events:none;
+      opacity:.85;
+    }
+    .card:after{
+      content:"";position:absolute;inset:0;border-radius:var(--r);
+      box-shadow: inset 0 0 0 1px rgba(28,110,255,.22);
+      pointer-events:none;
+    }
+    .head{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+      padding:14px 16px;
+      border-bottom:1px solid rgba(28,110,255,.14);
+      background:rgba(0,0,0,.22);
+      position:relative;z-index:1;
+    }
+    .title{font-size:12px;letter-spacing:.35px;color:rgba(234,240,255,.90);display:flex;align-items:center;gap:10px;}
+    .badge{font-size:11px;padding:6px 10px;border-radius:999px;border:1px solid rgba(28,110,255,.26);background:rgba(28,110,255,.12);}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;}
+    .btn{
+      border:1px solid rgba(28,110,255,.22);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      padding:10px 12px;border-radius:14px;
+      cursor:pointer;user-select:none;
+      transition:transform .12s ease,border-color .12s ease,background .12s ease;
+      display:inline-flex;align-items:center;gap:10px;
+      position:relative;z-index:1;
+    }
+    .btn:hover{transform:translateY(-1px);border-color:rgba(28,110,255,.42);background:rgba(255,255,255,.055);}
+    .btn.primary{
+      border-color:rgba(28,110,255,.60);
+      background:linear-gradient(135deg, rgba(28,110,255,.28), rgba(24,182,255,.12));
+      box-shadow:0 0 0 1px rgba(28,110,255,.16), 0 16px 60px rgba(28,110,255,.18);
+    }
+    .btn small{color:var(--muted);font-size:11px;}
+    .body{padding:14px 16px 16px;position:relative;z-index:1;}
+    .panel{display:grid;gap:12px;}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    @media (max-width:740px){.row{grid-template-columns:1fr;}}
+    .control{
+      background:rgba(0,0,0,.24);
+      border:1px solid rgba(28,110,255,.14);
+      border-radius:16px;
+      padding:12px;
+      position:relative;
+      overflow:hidden;
+    }
+    .control:before{
+      content:"";position:absolute;inset:-2px;
+      background:radial-gradient(700px 180px at 20% 0%, rgba(28,110,255,.14), transparent 62%);
+      pointer-events:none;
+    }
+    .label{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;font-size:12px;color:rgba(234,240,255,.92);position:relative;z-index:1;}
+    .hint{color:var(--muted);font-size:11px;}
+    .slider{width:100%;appearance:none;height:8px;border-radius:999px;background:rgba(255,255,255,.10);outline:none;position:relative;z-index:1;}
+    .slider::-webkit-slider-thumb{
+      appearance:none;width:18px;height:18px;border-radius:999px;
+      background:linear-gradient(135deg, rgba(28,110,255,1), rgba(24,182,255,1));
+      border:1px solid rgba(255,255,255,.22);
+      box-shadow:0 12px 40px rgba(0,0,0,.45), 0 0 0 6px rgba(28,110,255,.10);
+      cursor:pointer;
+    }
+    .toggles{display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1;}
+    .chip{
+      padding:9px 10px;border-radius:999px;
+      border:1px solid rgba(28,110,255,.18);
+      background:rgba(255,255,255,.03);
+      cursor:pointer;user-select:none;font-size:12px;
+      display:inline-flex;align-items:center;gap:8px;
+      transition:transform .12s ease, background .12s ease, border-color .12s ease;
+    }
+    .chip:hover{transform:translateY(-1px);border-color:rgba(28,110,255,.32);background:rgba(255,255,255,.05);}
+    .chip.on{border-color:rgba(24,182,255,.55);background:rgba(24,182,255,.10);}
+    .miniDot{width:8px;height:8px;border-radius:999px;background:rgba(255,255,255,.16);}
+    .chip.on .miniDot{background:rgba(24,182,255,1);}
+    .inputline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:relative;z-index:1;}
+    .field{
+      flex:1;min-width:160px;padding:10px 12px;border-radius:14px;
+      border:1px solid rgba(28,110,255,.16);
+      background:rgba(0,0,0,.28);
+      color:var(--text);outline:none;
+    }
+    .select{
+      padding:10px 12px;border-radius:14px;
+      border:1px solid rgba(28,110,255,.16);
+      background:rgba(0,0,0,.28);
+      color:var(--text);outline:none;cursor:pointer;
+    }
+    .scoreWrap{padding:14px 16px 16px;display:grid;gap:12px;position:relative;z-index:1;}
+    .meter{border-radius:18px;border:1px solid rgba(28,110,255,.16);background:rgba(0,0,0,.24);padding:12px;}
+    .meterTop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
+    .big{font-size:28px;letter-spacing:.6px;}
+    .status{padding:8px 10px;border-radius:999px;border:1px solid rgba(28,110,255,.16);font-size:12px;display:inline-flex;align-items:center;gap:8px;background:rgba(0,0,0,.18);}
+    .bar{height:10px;border-radius:999px;background:rgba(255,255,255,.10);overflow:hidden;}
+    .fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg, rgba(46,229,157,1), rgba(255,200,87,1), rgba(255,77,109,1));transition:width .35s ease;}
+    .smallRow{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:12px;margin-top:10px;}
+    .box{border-radius:18px;border:1px solid rgba(28,110,255,.16);background:rgba(0,0,0,.24);padding:12px;}
+    .box h3{margin:0 0 10px;font-size:12px;color:rgba(234,240,255,.92);letter-spacing:.3px;}
+    pre{margin:0;white-space:pre-wrap;word-break:break-word;color:rgba(234,240,255,.88);font-size:12px;line-height:1.45;}
+    .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:rgba(0,0,0,.60);
+      border:1px solid rgba(28,110,255,.18);padding:10px 12px;border-radius:14px;box-shadow:0 14px 50px rgba(0,0,0,.55);
+      backdrop-filter:blur(10px);display:none;z-index:50;max-width:min(680px, calc(100% - 24px));}
+    .kbd{font-family:ui-monospace, Menlo, Consolas, "Courier New", monospace;font-size:11px;padding:2px 6px;border-radius:8px;border:1px solid rgba(28,110,255,.18);background:rgba(255,255,255,.04);}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>RiskLens <span style="color:var(--muted)">• Fraud Console</span></h1>
+          <p class="sub">INR-only (currency hidden) • API: <span class="mono" id="apiBaseLabel"></span> • <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span></p>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="pill" id="connPill"><span class="dot" id="connDot"></span><span class="mono" id="connText">Checking…</span></div>
+        <div class="pill" id="copyBtn">Copy Payload</div>
+        <div class="pill" id="resetBtn">Reset</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="head">
+          <div class="title">Scenario Builder <span class="badge">engineered cols hidden</span></div>
+          <div class="actions">
+            <div class="btn" id="safeScenario">Safe <small>low</small></div>
+            <div class="btn" id="riskyScenario">Risky <small>high</small></div>
+            <div class="btn primary" id="scoreBtn">Score <small>/predict</small></div>
+          </div>
+        </div>
+
+        <div class="body">
+          <div class="panel">
+
+            <div class="row">
+              <div class="control">
+                <div class="label"><span>Amount (INR)</span><span class="mono" id="amountLabel">—</span></div>
+                <input class="slider" id="amount" type="range" min="2" max="47133" step="1" value="83" />
+                <div class="smallRow"><span class="hint">p99 ≈ 1766</span><span class="hint">max 47133</span></div>
+              </div>
+              <div class="control">
+                <div class="label"><span>Item count</span><span class="mono" id="itemsLabel">—</span></div>
+                <input class="slider" id="items" type="range" min="1" max="5" step="1" value="3" />
+                <div class="smallRow"><span class="hint">dataset 1–5</span><span class="hint">>=3 suspicious</span></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="control">
+                <div class="label"><span>IP flagged</span><span class="hint">0/1</span></div>
+                <div class="toggles" id="ipToggle">
+                  <div class="chip on" data-key="ip_risk" data-val="0"><span class="miniDot"></span> clean</div>
+                  <div class="chip" data-key="ip_risk" data-val="1"><span class="miniDot"></span> risky</div>
+                </div>
+              </div>
+              <div class="control">
+                <div class="label"><span>Device flagged</span><span class="hint">0/1</span></div>
+                <div class="toggles" id="devToggle">
+                  <div class="chip on" data-key="device_risk" data-val="0"><span class="miniDot"></span> clean</div>
+                  <div class="chip" data-key="device_risk" data-val="1"><span class="miniDot"></span> risky</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="control">
+                <div class="label"><span>Shipping signals</span><span class="hint">toggle</span></div>
+                <div class="toggles">
+                  <div class="chip" id="mismatch"><span class="miniDot"></span> billing ≠ shipping</div>
+                  <div class="chip" id="addrChanged"><span class="miniDot"></span> address changed</div>
+                  <div class="chip on" id="emailVerified"><span class="miniDot"></span> email verified</div>
+                </div>
+              </div>
+              <div class="control">
+                <div class="label"><span>Country + Payment</span><span class="hint">tap</span></div>
+                <div class="inputline">
+                  <select class="select" id="country">
+                    <option>IN</option><option>NG</option><option>PH</option><option>BR</option><option>ID</option>
+                    <option>MX</option><option>US</option><option>GB</option><option>DE</option><option>FR</option>
+                  </select>
+                </div>
+                <div class="toggles" id="pmToggles" style="margin-top:10px;">
+                  <div class="chip on" data-key="payment_method" data-val="card"><span class="miniDot"></span> card</div>
+                  <div class="chip" data-key="payment_method" data-val="wallet"><span class="miniDot"></span> wallet</div>
+                  <div class="chip" data-key="payment_method" data-val="upi"><span class="miniDot"></span> upi</div>
+                  <div class="chip" data-key="payment_method" data-val="bank_transfer"><span class="miniDot"></span> bank</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="control">
+                <div class="label"><span>Account age</span><span class="mono" id="ageLabel">—</span></div>
+                <input class="slider" id="acctAge" type="range" min="0" max="1499" step="1" value="748" />
+                <div class="smallRow"><span class="hint"><=740 suspicious</span><span class="hint">max 1499</span></div>
+              </div>
+              <div class="control">
+                <div class="label"><span>Orders last 7d</span><span class="mono" id="ordersLabel">—</span></div>
+                <input class="slider" id="orders7d" type="range" min="0" max="44" step="1" value="1" />
+                <div class="smallRow"><span class="hint">>=20 suspicious</span><span class="hint">max 44</span></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="control">
+                <div class="label"><span>Failed payments (24h)</span><span class="mono" id="failsLabel">—</span></div>
+                <input class="slider" id="fails24h" type="range" min="0" max="6" step="1" value="0" />
+                <div class="smallRow"><span class="hint">>=2 suspicious</span><span class="hint">max 6</span></div>
+              </div>
+              <div class="control">
+                <div class="label"><span>Distance IP → Shipping</span><span class="mono" id="distLabel">—</span></div>
+                <input class="slider" id="distKm" type="range" min="0" max="10210" step="5" value="214" />
+                <div class="smallRow"><span class="hint">>=500 suspicious</span><span class="hint">max 10210</span></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="control">
+                <div class="label"><span>Event time</span><span class="hint">night/day</span></div>
+                <div class="inputline">
+                  <input class="field mono" id="eventTime" placeholder="YYYY-MM-DD HH:MM:SS" />
+                  <div class="btn" id="nowBtn">Now</div>
+                  <div class="btn" id="nightBtn">Night</div>
+                  <div class="btn" id="dayBtn">Day</div>
+                </div>
+                <div class="smallRow"><span class="hint">Night = 23–4</span><span class="hint">engineered computed + sent</span></div>
+              </div>
+              <div class="control">
+                <div class="label"><span>Currency</span><span class="hint">hidden</span></div>
+                <div class="toggles">
+                  <div class="chip on"><span class="miniDot"></span> INR</div>
+                  <div class="chip on"><span class="miniDot"></span> amount_inr = order_amount</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="head">
+          <div class="title">Live Output <span class="badge mono" id="lastCall">Idle</span></div>
+        </div>
+        <div class="scoreWrap">
+          <div class="meter">
+            <div class="meterTop">
+              <div>
+                <div class="hint" style="margin-bottom:4px;">Fraud probability</div>
+                <div class="big mono" id="probText">—</div>
+              </div>
+              <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">No score yet</span></div>
+            </div>
+            <div class="bar"><div class="fill" id="fill"></div></div>
+            <div class="smallRow"><span>Decision</span><span class="mono" id="predText">—</span></div>
+          </div>
+
+          <div class="box"><h3>Payload Preview (includes engineered)</h3><pre id="payloadOut" class="mono">—</pre></div>
+          <div class="box"><h3>Response</h3><pre id="respOut" class="mono">—</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:8000";
+    document.getElementById("apiBaseLabel").textContent = API_BASE;
+    const $ = (id) => document.getElementById(id);
+    const fmtINR = (n) => "₹ " + Number(n).toLocaleString("en-IN");
+
+    const state = {
+      payment_method: "card",
+      billing_shipping_mismatch: 0,
+      shipping_address_changed: 0,
+      email_verified: 1,
+      ip_risk: 0,
+      device_risk: 0,
+    };
+
+    function toast(msg){
+      const t = $("toast");
+      t.textContent = msg;
+      t.style.display = "block";
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(()=>{ t.style.display="none"; }, 1600);
+    }
+
+    function nowTs(){
+      const d = new Date();
+      const pad = (x)=> String(x).padStart(2,"0");
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+    function setEventTime(h, m=0, s=0){
+      const d = new Date();
+      const pad = (x)=> String(x).padStart(2,"0");
+      $("eventTime").value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(h)}:${pad(m)}:${pad(s)}`;
+    }
+
+    function setToggleGroupOn(container, val){
+      container.querySelectorAll(".chip").forEach(c=>{
+        c.classList.toggle("on", c.dataset.val === String(val));
+      });
+    }
+
+    function computeEngineered(raw){
+      const eventHour = Number(String(raw.event_time).slice(11,13)) || 0;
+      const unusualTime = (eventHour >= 23 || eventHour <= 4) ? 1 : 0;
+
+      const amountInr = Number(raw.order_amount) || 0;
+      const unusualAmount = amountInr >= 11000 ? 1 : 0;
+
+      const unusualItemQty = (Number(raw.item_count) || 0) >= 3 ? 1 : 0;
+
+      const ipRiskScore = Math.max(Number(raw.ip_risk)||0, Number(raw.device_risk)||0);
+
+      const shippingRiskScore = Math.max(
+        Number(raw.billing_shipping_mismatch)||0,
+        Number(raw.shipping_address_changed)||0
+      );
+
+      const newAccount = (Number(raw.account_age_days)||0) <= 740 ? 1 : 0;
+
+      const unusualDistance = (Number(raw.distance_ip_to_shipping_km)||0) >= 500 ? 1 : 0;
+
+      const pm = String(raw.payment_method || "").toLowerCase();
+      const suspectedMethod = (pm.includes("card") || pm.includes("wallet")) ? 1 : 0;
+
+      const unusualOrdersLast7d = (Number(raw.orders_last_7d)||0) >= 20 ? 1 : 0;
+
+      const suspectedFailedPaymentsLast24h = (Number(raw.failed_payments_last_24h)||0) >= 2 ? 1 : 0;
+
+      const overallRiskScore =
+        unusualTime +
+        unusualAmount +
+        unusualItemQty +
+        ipRiskScore +
+        shippingRiskScore +
+        newAccount +
+        unusualDistance +
+        suspectedMethod +
+        unusualOrdersLast7d +
+        suspectedFailedPaymentsLast24h;
+
+      return {
+        event_hour: eventHour,
+        unusual_time: unusualTime,
+        amount_inr: amountInr,
+        unusual_amount: unusualAmount,
+        unusual_item_qty: unusualItemQty,
+        ip_risk_score: ipRiskScore,
+        shipping_risk_score: shippingRiskScore,
+        new_account: newAccount,
+        unusual_distance: unusualDistance,
+        suspected_method: suspectedMethod,
+        unusual_orders_last_7d: unusualOrdersLast7d,
+        suspected_failed_payments_last_24h: suspectedFailedPaymentsLast24h,
+        overall_risk_score: overallRiskScore
+      };
+    }
+
+    function getPayload(){
+      const raw = {
+        event_time: $("eventTime").value.trim(),
+        order_amount: Number($("amount").value),
+        currency: "INR",
+        country: $("country").value,
+        payment_method: state.payment_method,
+
+        item_count: Number($("items").value),
+        ip_risk: Number(state.ip_risk),
+        device_risk: Number(state.device_risk),
+        billing_shipping_mismatch: Number(state.billing_shipping_mismatch),
+        shipping_address_changed: Number(state.shipping_address_changed),
+        email_verified: Number(state.email_verified),
+        account_age_days: Number($("acctAge").value),
+        orders_last_7d: Number($("orders7d").value),
+        failed_payments_last_24h: Number($("fails24h").value),
+        distance_ip_to_shipping_km: Number($("distKm").value)
+      };
+
+      const eng = computeEngineered(raw);
+      return { data: { ...raw, ...eng } };
+    }
+
+    function renderPreview(){ $("payloadOut").textContent = JSON.stringify(getPayload(), null, 2); }
+
+    function syncLabels(){
+      $("amountLabel").textContent = fmtINR($("amount").value);
+      $("itemsLabel").textContent = $("items").value;
+      $("ageLabel").textContent = $("acctAge").value + " days";
+      $("ordersLabel").textContent = $("orders7d").value;
+      $("failsLabel").textContent = $("fails24h").value;
+      $("distLabel").textContent = Number($("distKm").value).toFixed(0) + " km";
+      renderPreview();
+    }
+
+    function setConn(ok){
+      const dot = $("connDot");
+      dot.classList.remove("good","bad");
+      if(ok){ dot.classList.add("good"); $("connText").textContent = "API Online"; }
+      else { dot.classList.add("bad"); $("connText").textContent = "API Offline"; }
+    }
+    async function checkHealth(){
+      try{
+        const res = await fetch(API_BASE + "/health");
+        const j = await res.json();
+        setConn(Boolean(j.model_loaded));
+      }catch(e){ setConn(false); }
+    }
+
+    function setResult(proba, pred){
+      if(proba == null){
+        $("probText").textContent = "—";
+        $("predText").textContent = "—";
+        $("fill").style.width = "0%";
+        $("statusText").textContent = "No score yet";
+        $("statusDot").className = "dot";
+        return;
+      }
+      const pct = Math.max(0, Math.min(100, Math.round(proba*100)));
+      $("probText").textContent = (proba*100).toFixed(2) + "%";
+      $("predText").textContent = pred === 1 ? "FRAUD" : "LEGIT";
+      $("fill").style.width = pct + "%";
+
+      const dot = $("statusDot");
+      dot.className = "dot";
+      if(proba >= 0.30){ dot.classList.add("bad"); $("statusText").textContent = "High Risk"; }
+      else if(proba >= 0.12){ $("statusText").textContent = "Medium Risk"; }
+      else { dot.classList.add("good"); $("statusText").textContent = "Low Risk"; }
+    }
+
+    async function score(){
+      $("lastCall").textContent = "Scoring…";
+      $("respOut").textContent = "…";
+      const payload = getPayload();
+      renderPreview();
+
+      try{
+        const res = await fetch(API_BASE + "/predict", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify(payload)
+        });
+
+        const txt = await res.text();
+        $("lastCall").textContent = "Done";
+
+        let j;
+        try{ j = JSON.parse(txt); }catch{ j = null; }
+
+        $("respOut").textContent = j ? JSON.stringify(j, null, 2) : txt;
+
+        if(res.ok && j){
+          setResult(j.proba, j.pred);
+          toast("Scored ✅");
+        }else{
+          setResult(null,null);
+          toast("Error");
+        }
+      }catch(e){
+        $("lastCall").textContent = "Failed";
+        $("respOut").textContent = String(e);
+        setResult(null,null);
+        toast("Network error");
+      }
+      checkHealth();
+    }
+
+    function reset(){
+      $("amount").value = 83;
+      $("items").value = 3;
+      $("acctAge").value = 748;
+      $("orders7d").value = 1;
+      $("fails24h").value = 0;
+      $("distKm").value = 214;
+      $("country").value = "IN";
+      $("eventTime").value = nowTs();
+
+      state.payment_method = "card";
+      state.billing_shipping_mismatch = 0;
+      state.shipping_address_changed = 0;
+      state.email_verified = 1;
+      state.ip_risk = 0;
+      state.device_risk = 0;
+
+      setToggleGroupOn($("pmToggles"), "card");
+      setToggleGroupOn($("ipToggle"), "0");
+      setToggleGroupOn($("devToggle"), "0");
+
+      $("mismatch").classList.remove("on");
+      $("addrChanged").classList.remove("on");
+      $("emailVerified").classList.add("on");
+
+      $("respOut").textContent = "—";
+      $("lastCall").textContent = "Idle";
+      setResult(null,null);
+      syncLabels();
+    }
+
+    function safeScenario(){
+      $("amount").value = 60;
+      $("items").value = 2;
+      $("acctAge").value = 1200;
+      $("orders7d").value = 1;
+      $("fails24h").value = 0;
+      $("distKm").value = 60;
+      $("country").value = "IN";
+      setEventTime(14,30,0);
+
+      state.payment_method = "upi";
+      state.billing_shipping_mismatch = 0;
+      state.shipping_address_changed = 0;
+      state.email_verified = 1;
+      state.ip_risk = 0;
+      state.device_risk = 0;
+
+      setToggleGroupOn($("pmToggles"), "upi");
+      setToggleGroupOn($("ipToggle"), "0");
+      setToggleGroupOn($("devToggle"), "0");
+
+      $("mismatch").classList.remove("on");
+      $("addrChanged").classList.remove("on");
+      $("emailVerified").classList.add("on");
+
+      syncLabels();
+    }
+
+    function riskyScenario(){
+      $("amount").value = 47133;
+      $("items").value = 5;
+      $("acctAge").value = 5;
+      $("orders7d").value = 44;
+      $("fails24h").value = 6;
+      $("distKm").value = 10210;
+      $("country").value = "NG";
+      setEventTime(1,12,0);
+
+      state.payment_method = "wallet";
+      state.billing_shipping_mismatch = 1;
+      state.shipping_address_changed = 1;
+      state.email_verified = 0;
+      state.ip_risk = 1;
+      state.device_risk = 1;
+
+      setToggleGroupOn($("pmToggles"), "wallet");
+      setToggleGroupOn($("ipToggle"), "1");
+      setToggleGroupOn($("devToggle"), "1");
+
+      $("mismatch").classList.add("on");
+      $("addrChanged").classList.add("on");
+      $("emailVerified").classList.remove("on");
+
+      syncLabels();
+    }
+
+    function setupGroup(containerId){
+      const el = $(containerId);
+      el.addEventListener("click",(e)=>{
+        const chip = e.target.closest(".chip");
+        if(!chip) return;
+        const key = chip.dataset.key;
+        const val = chip.dataset.val;
+
+        if(key === "payment_method"){
+          state.payment_method = val;
+          setToggleGroupOn(el, val);
+        }else if(key === "ip_risk"){
+          state.ip_risk = Number(val);
+          setToggleGroupOn(el, val);
+        }else if(key === "device_risk"){
+          state.device_risk = Number(val);
+          setToggleGroupOn(el, val);
+        }
+        renderPreview();
+      });
+    }
+
+    function toggleChip(el, key){
+      el.addEventListener("click", ()=>{
+        el.classList.toggle("on");
+        state[key] = el.classList.contains("on") ? 1 : 0;
+        renderPreview();
+      });
+    }
+
+    ["amount","items","acctAge","orders7d","fails24h","distKm","country","eventTime"].forEach(id => {
+      $(id).addEventListener("input", syncLabels);
+    });
+
+    setupGroup("pmToggles");
+    setupGroup("ipToggle");
+    setupGroup("devToggle");
+    toggleChip($("mismatch"), "billing_shipping_mismatch");
+    toggleChip($("addrChanged"), "shipping_address_changed");
+    toggleChip($("emailVerified"), "email_verified");
+
+    $("nowBtn").addEventListener("click", ()=>{ $("eventTime").value = nowTs(); syncLabels(); });
+    $("nightBtn").addEventListener("click", ()=>{ setEventTime(1,12,0); syncLabels(); });
+    $("dayBtn").addEventListener("click", ()=>{ setEventTime(14,30,0); syncLabels(); });
+
+    $("scoreBtn").addEventListener("click", score);
+    $("safeScenario").addEventListener("click", safeScenario);
+    $("riskyScenario").addEventListener("click", riskyScenario);
+    $("resetBtn").addEventListener("click", reset);
+
+    $("copyBtn").addEventListener("click", async ()=>{
+      const p = JSON.stringify(getPayload(), null, 2);
+      try{ await navigator.clipboard.writeText(p); toast("Copied ✅"); }catch{ toast("Copy failed"); }
+    });
+
+    $("connPill").addEventListener("click", async ()=>{ $("connText").textContent="Checking…"; await checkHealth(); });
+
+    window.addEventListener("keydown",(e)=>{
+      if((e.ctrlKey || e.metaKey) && e.key === "Enter"){ e.preventDefault(); score(); }
+    });
+
+    reset();
+    checkHealth();
+    setInterval(checkHealth, 12000);
+  </script>
+</body>
+</html>

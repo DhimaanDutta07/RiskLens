@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/dhima/OneDrive/Desktop/ml_practice/mlruns/812186331945244992/883fb3f74923465c808efcaf90411d83/artifacts
+end_time: 1771069847599
+entry_point_name: ''
+experiment_id: '812186331945244992'
+lifecycle_stage: active
+run_id: 883fb3f74923465c808efcaf90411d83
+run_name: logreg
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1771069827732
+status: 3
+tags: []
+user_id: dhima

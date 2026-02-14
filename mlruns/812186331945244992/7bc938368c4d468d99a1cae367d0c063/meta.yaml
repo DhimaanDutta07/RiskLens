@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/dhima/OneDrive/Desktop/ml_practice/mlruns/812186331945244992/7bc938368c4d468d99a1cae367d0c063/artifacts
+end_time: 1771069859021
+entry_point_name: ''
+experiment_id: '812186331945244992'
+lifecycle_stage: active
+run_id: 7bc938368c4d468d99a1cae367d0c063
+run_name: xgb
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1771069854336
+status: 3
+tags: []
+user_id: dhima
