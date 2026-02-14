@@ -51,7 +51,7 @@ def run_train(model_name: str):
         report_path=f"artifacts/metrics/{model_name}.json",
     )
 
-    rep = trainer.fit(X_train, y_train, X_test, y_test)
+    rep = trainer.fit(X_train, y_train, X_test, y_test, model_name=model_name)
     print(model_name, rep["roc_auc"], rep["pr_auc"])
 
 
