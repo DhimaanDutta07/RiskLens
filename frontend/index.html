@@ -1,7 +1,3 @@
-<!-- =========================
-FILE: frontend/index.html
-(ENTIRE FILE)
-========================= -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -64,10 +60,8 @@ FILE: frontend/index.html
     .dot{width:9px;height:9px;border-radius:999px;background:var(--warn);box-shadow:0 0 0 3px rgba(255,200,87,.12);}
     .dot.good{background:var(--good);box-shadow:0 0 0 3px rgba(46,229,157,.12);}
     .dot.bad{background:var(--bad);box-shadow:0 0 0 3px rgba(255,77,109,.12);}
-
     .grid{display:grid;grid-template-columns:1.4fr .6fr;gap:14px;}
     @media (max-width:980px){.grid{grid-template-columns:1fr;}}
-
     .card{
       background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
       border-radius:var(--r);
@@ -350,8 +344,9 @@ FILE: frontend/index.html
   <div class="toast" id="toast"></div>
 
   <script>
-    const API_BASE = "http://127.0.0.1:8000";
+    const API_BASE = "https://risklens-fow8.onrender.com".replace(/\/+$/,"");
     document.getElementById("apiBaseLabel").textContent = API_BASE;
+
     const $ = (id) => document.getElementById(id);
     const fmtINR = (n) => "₹ " + Number(n).toLocaleString("en-IN");
 
@@ -377,6 +372,7 @@ FILE: frontend/index.html
       const pad = (x)=> String(x).padStart(2,"0");
       return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     }
+
     function setEventTime(h, m=0, s=0){
       const d = new Date();
       const pad = (x)=> String(x).padStart(2,"0");
@@ -481,18 +477,56 @@ FILE: frontend/index.html
       renderPreview();
     }
 
-    function setConn(ok){
+    function setConn(ok, msg){
       const dot = $("connDot");
       dot.classList.remove("good","bad");
-      if(ok){ dot.classList.add("good"); $("connText").textContent = "API Online"; }
-      else { dot.classList.add("bad"); $("connText").textContent = "API Offline"; }
+      if(ok){ dot.classList.add("good"); $("connText").textContent = msg || "API Online"; }
+      else { dot.classList.add("bad"); $("connText").textContent = msg || "API Offline"; }
     }
-    async function checkHealth(){
+
+    async function fetchWithTimeout(url, opts={}, timeoutMs=9000){
+      const controller = new AbortController();
+      const id = setTimeout(()=>controller.abort(), timeoutMs);
       try{
-        const res = await fetch(API_BASE + "/health");
-        const j = await res.json();
-        setConn(Boolean(j.model_loaded));
-      }catch(e){ setConn(false); }
+        const res = await fetch(url, { ...opts, signal: controller.signal });
+        return res;
+      } finally {
+        clearTimeout(id);
+      }
+    }
+
+    function interpretHealthJson(j){
+      if(!j || typeof j !== "object") return null;
+      if(typeof j.model_loaded === "boolean") return j.model_loaded;
+      if(typeof j.ok === "boolean") return j.ok;
+      if(typeof j.healthy === "boolean") return j.healthy;
+      if(typeof j.status === "string") return ["ok","healthy","ready","up"].includes(j.status.toLowerCase());
+      return null;
+    }
+
+    async function checkHealth(){
+      const paths = ["/health","/api/health","/"];
+      setConn(false, "Checking…");
+      for(const p of paths){
+        try{
+          const res = await fetchWithTimeout(API_BASE + p, { method:"GET" }, 12000);
+          if(!res.ok) continue;
+
+          const ct = (res.headers.get("content-type") || "").toLowerCase();
+          if(ct.includes("application/json")){
+            const j = await res.json();
+            const ok = interpretHealthJson(j);
+            if(ok === true){ setConn(true, "API Online"); return; }
+            if(ok === false){ setConn(false, "API Online (model not ready)"); return; }
+            setConn(true, "API Online"); return;
+          } else {
+            const txt = (await res.text()).trim();
+            if(txt.length){ setConn(true, "API Online"); return; }
+            setConn(true, "API Online"); return;
+          }
+        }catch(e){}
+      }
+      setConn(false, "API Offline / sleeping");
     }
 
     function setResult(proba, pred){
@@ -516,40 +550,60 @@ FILE: frontend/index.html
       else { dot.classList.add("good"); $("statusText").textContent = "Low Risk"; }
     }
 
+    async function postPredict(payload){
+      const candidates = ["/predict","/api/predict"];
+      let lastTxt = "";
+      let lastStatus = 0;
+
+      for(const p of candidates){
+        try{
+          const res = await fetchWithTimeout(API_BASE + p, {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify(payload)
+          }, 45000);
+
+          lastStatus = res.status;
+          lastTxt = await res.text();
+
+          if(res.ok){
+            let j;
+            try{ j = JSON.parse(lastTxt); }catch{ j = null; }
+            return { ok:true, status:res.status, text:lastTxt, json:j };
+          }
+        }catch(e){
+          lastTxt = String(e);
+        }
+      }
+      return { ok:false, status:lastStatus, text:lastTxt, json:null };
+    }
+
     async function score(){
       $("lastCall").textContent = "Scoring…";
       $("respOut").textContent = "…";
       const payload = getPayload();
       renderPreview();
 
-      try{
-        const res = await fetch(API_BASE + "/predict", {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify(payload)
-        });
+      const out = await postPredict(payload);
 
-        const txt = await res.text();
+      if(out.ok){
         $("lastCall").textContent = "Done";
+        $("respOut").textContent = out.json ? JSON.stringify(out.json, null, 2) : out.text;
 
-        let j;
-        try{ j = JSON.parse(txt); }catch{ j = null; }
-
-        $("respOut").textContent = j ? JSON.stringify(j, null, 2) : txt;
-
-        if(res.ok && j){
-          setResult(j.proba, j.pred);
+        if(out.json && typeof out.json.proba === "number" && typeof out.json.pred === "number"){
+          setResult(out.json.proba, out.json.pred);
           toast("Scored ✅");
         }else{
           setResult(null,null);
-          toast("Error");
+          toast("Bad response shape");
         }
-      }catch(e){
+      }else{
         $("lastCall").textContent = "Failed";
-        $("respOut").textContent = String(e);
+        $("respOut").textContent = out.text || ("HTTP " + out.status);
         setResult(null,null);
-        toast("Network error");
+        toast("Error");
       }
+
       checkHealth();
     }
 
@@ -672,6 +726,7 @@ FILE: frontend/index.html
 
     ["amount","items","acctAge","orders7d","fails24h","distKm","country","eventTime"].forEach(id => {
       $(id).addEventListener("input", syncLabels);
+      $(id).addEventListener("change", syncLabels);
     });
 
     setupGroup("pmToggles");
@@ -703,7 +758,7 @@ FILE: frontend/index.html
 
     reset();
     checkHealth();
-    setInterval(checkHealth, 12000);
+    setInterval(checkHealth, 30000);
   </script>
 </body>
 </html>
